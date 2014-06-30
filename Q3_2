@@ -1,5 +1,7 @@
 import java.util.*;
 
+import java.util.*;
+
 class stack{
 	int[] stElem;
 	int top;
@@ -26,6 +28,11 @@ class stack{
 			;
 		return k;
 	}
+
+	public int min(int a){
+		return this.push(a);
+	}
+
 	public void display(){
 		for(int i = top-1; i>=0; i--)
 			System.out.print(stElem[i]+" ");
@@ -36,16 +43,17 @@ public class Q3_2{
 	public static void main(String[] args){
 		stack st = new stack(20);
 		Scanner sc = new Scanner(System.in);
-		System.out.print("请输入长度");
+		System.out.print("请输入长度:");
 		int x = sc.nextInt();
-		System.out.print("请输入元素");
+		System.out.print("请输入元素:");
 		for(int i = 0;i<x;i++){
 			st.push(sc.nextInt());
 		}
 		st.display();
 		st.pop();
 		st.display();
-		System.out.println(st.push("最小值为："+sc.nextInt()));
+		System.out.print("请输入插入值：");
+		System.out.println(st.min(sc.nextInt()));
 		st.display();
 	}
 }
