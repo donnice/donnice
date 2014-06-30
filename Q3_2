@@ -1,0 +1,51 @@
+import java.util.*;
+
+class stack{
+	int[] stElem;
+	int top;
+	public stack(int maxSize){
+		top = 0;
+		stElem = new int[maxSize];
+	}
+	public int pop(){
+		if(top == 0)
+			return -1;
+		else
+			return stElem[--top];
+		
+	}
+	public int push(int e){
+		if(top==stElem.length)
+			System.out.print("您真逗");
+		else
+			stElem[top++] = e;
+		int k = stElem[0];
+		if(e<=k)
+			k = e;
+		else
+			;
+		return k;
+	}
+	public void display(){
+		for(int i = top-1; i>=0; i--)
+			System.out.print(stElem[i]+" ");
+		System.out.println();
+	}
+}
+public class Q3_2{
+	public static void main(String[] args){
+		stack st = new stack(20);
+		Scanner sc = new Scanner(System.in);
+		System.out.print("请输入长度");
+		int x = sc.nextInt();
+		System.out.print("请输入元素");
+		for(int i = 0;i<x;i++){
+			st.push(sc.nextInt());
+		}
+		st.display();
+		st.pop();
+		st.display();
+		System.out.println(st.push("最小值为："+sc.nextInt()));
+		st.display();
+	}
+}
