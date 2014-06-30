@@ -1,0 +1,31 @@
+import java.util.*;
+
+public class Q2_7{
+	public static void main(String[] agrs){
+		List<Object>theList = new LinkedList<Object>();
+		Scanner sc = new Scanner(System.in);
+		System.out.print("请输入相关数字或字母，以0结束:");
+		for(int x = sc.nextInt(); x != 0; x = sc.nextInt()){
+			theList.add(x);
+		}
+
+		Object[] a = theList.toArray(new Object[0]);
+		int k = a.length;
+		if(k%2 == 0){
+			for(int i = 0; i<k%2; i++){
+				if(a[i] != a[k-i]){
+					System.out.println("false");
+					break;
+			}
+			System.out.print("true");
+		}
+		else{
+			for(int j = 0; j<k%2-1; j++){
+				if(a[j] != a[k-j]){
+					System.out.println("false");
+					break;
+			}
+			System.out.print("true");
+		}
+	}
+}
