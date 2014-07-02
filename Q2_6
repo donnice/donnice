@@ -1,0 +1,25 @@
+import java.util.*;
+
+public class Q2_6{
+	public static void main(String[] agrs){
+		List<Object>theList = new LinkedList<Object>();
+		Scanner sc = new Scanner(System.in);
+		System.out.print("请输入相关数字或字母，以0结束:");
+		for(int x = sc.nextInt(); x != 0; x = sc.nextInt()){
+			theList.add(x);
+		}
+		for(int j = 0; j<theList.size(); j++){
+			System.out.print(theList.get(j)+" ");
+		}
+		System.out.println();
+		for(int i = 0; i<theList.size(); i++){
+			Object t = theList.get(i);
+			theList.remove(i);
+			if(theList.contains(t)){
+				System.out.print("圈产生于"+theList.get(theList.indexOf(t)));
+				break;
+			}
+			theList.add(i,t);
+		}			
+	}
+}
