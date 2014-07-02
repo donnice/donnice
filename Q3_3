@@ -1,0 +1,66 @@
+import java.util.*;
+
+class stack{
+	Scanner sc = new Scanner(System.in);
+	int t = sc.nextInt();
+	int maxSize = (t-1)/10+1;
+	Object[][] stElem = new Object[maxSize][10];
+	int[] top = new int[maxSize];
+	int i = 0;{
+	while(i<maxSize){
+		top[i] = 0;
+		i++;
+	}
+	}
+	
+	public int init(int currInt){
+		return top[currInt];
+	}
+	
+	public void push(int currInt, Object e){
+		if(top[currInt] == 10)
+			System.out.print("hehe");
+		else
+			stElem[currInt][top[currInt]++] = e;
+	}
+	
+	public Object pop(int currInt){
+		if(top[currInt]==0)
+			return null;
+		else
+			return stElem[currInt][--top[currInt]];
+	}
+	
+	public void display(int currInt){
+		for(int i = top[currInt]-1; i>=0; i--)
+				System.out.print(stElem[currInt][i]+" ");
+			System.out.println();
+	}
+}
+public class Q3_3{
+	public static void main(String[] args){
+		Scanner sc = new Scanner(System.in);
+		System.out.print("please input the maxSize(>0):");
+		stack st = new stack();
+		int i = 0;
+		int currInt = 0;
+		while(i<=st.t){
+			st.push(currInt, i);
+			if((i+1)%10 == 0)
+				currInt++;
+			i++;
+		}
+		for(int k = 0; k<st.maxSize; k++)
+			st.display(k);
+		System.out.print("please input the stack you want to pop:");
+		st.pop(sc.nextInt());
+		for(int m = 0; m<st.maxSize; m++)
+			st.display(m);
+		System.out.print("please input the stack and value you want to push:");
+		int a = sc.nextInt();
+		int b = sc.nextInt();
+		st.push(a, b);
+		for(int l = 0; l<st.maxSize; l++)
+			st.display(l);
+	}
+} 
