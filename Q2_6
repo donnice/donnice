@@ -20,6 +20,8 @@ public class Q2_6{
 				break;
 			}
 			theList.add(i,t);
+			if(i == theList.size()-1)
+				System.out.print("您真逗儿");
 		}			
 	}
 }
