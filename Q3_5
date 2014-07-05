@@ -1,0 +1,46 @@
+import java.util.Stack;
+
+class myQueue<Object>{
+	 Stack<Object> sin;
+	 Stack<Object> sout;	
+	
+	public myQueue(){
+		sin = new Stack<Object>();
+		sout = new Stack<Object>();
+	}
+	
+	public void enqueue(Object e){
+		sin.push(e);
+	}
+	
+	public Object dequeue(){
+		if(sout.isEmpty()){
+			if(sin.isEmpty())
+				return null;
+			else
+				while(!sin.isEmpty())
+					sout.push(sin.pop());
+		}
+		return sout.pop();
+	}
+	
+	public boolean empty(){
+		return sin.isEmpty();
+	}
+}
+public class Q3_5 {
+	public static void main(String[] args){
+		myQueue<Integer> my = new myQueue<Integer>();
+		for(int i = 0; i<10; i++)
+			my.enqueue(i);
+		for(int i = 0; i<5; i++)
+			System.out.print(my.dequeue()+" ");
+		System.out.println();
+		for(int i = 10; i<15; i++)
+			my.enqueue(i);
+		for(int i = 0; i<10; i++)
+			System.out.print(my.dequeue()+" ");
+		System.out.println();
+		System.out.print(my.empty());
+	}
+}
