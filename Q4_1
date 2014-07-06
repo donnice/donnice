@@ -1,0 +1,133 @@
+import java.util.*;
+
+class BiTreeNode{
+	public Object data;
+	public BiTreeNode lt,rt;
+	public BiTreeNode(){
+		this(null);
+	}
+	public BiTreeNode(Object data){
+		this(data,null,null);
+	}
+	public BiTreeNode(Object data,BiTreeNode lt,BiTreeNode rt){
+		this.data = data;
+		this.lt = lt;
+		this.rt = rt;
+	}
+	public Object getData(){
+		return data;
+	}
+	public void setData(Object data){
+		this.data = data;
+	}
+	public BiTreeNode getLChild(){
+		return lt;
+	}
+	public void setLChild(BiTreeNode lt){
+		this.lt = lt;
+	}
+	public BiTreeNode getRChild(){
+		return rt;
+	}
+	public void setRChild(BiTreeNode rt){
+		this.rt = rt;
+	}
+}
+
+class BiTree{
+	private BiTreeNode root;
+	
+	public BiTree(){
+		this.root = null;
+	}
+	public BiTree(BiTreeNode root){
+		this.root = root;
+	}
+	public void insert(int x){
+		root = insert(x,root);
+	}
+	public BiTreeNode insert(int x, BiTreeNode t){
+		if(t == null)
+			return new BiTreeNode(x,null,null);
+		int compareResult = String.valueOf(x).compareTo(String.valueOf(t.data));
+		if(compareResult<0)
+			t.lt = insert(x, t.lt);
+		else if(compareResult>0)
+			t.rt = insert(x, t.rt);
+		else
+			;
+		return t;
+	}
+	
+	public int findMin(BiTreeNode t){
+		int k = 0;
+		if(t == null)
+			return 0;
+		else{
+			while(t.lt!=null){
+				t = t.getLChild();
+				k++;
+			}
+			return k;
+		}
+	}
+	
+	public int findMax(BiTreeNode t){
+		int i = 0;
+		if(t == null)
+			return 0;
+		else{
+			while(t.rt!=null){
+				t = t.getRChild();
+				i++;
+			}
+			return i;
+		}
+	}
+			
+	public void printTree(BiTreeNode t){
+		if(t!=null){
+			System.out.print(t.getData()+" ");
+			printTree(t.getLChild());
+			System.out.println();
+			printTree(t.getRChild());
+		}
+	}
+	
+}
+
+public class Q4_1{
+	public static void main(String[] args){
+		BiTreeNode t = new BiTreeNode(5);
+		BiTreeNode t2 = new BiTreeNode(7);
+		BiTree b = new BiTree(t);
+		BiTree b2 = new BiTree(t2);
+		int[] a = {2,1,4,3,8,7};
+		int[] c = {2,1,4,3,5,8};
+		for(int i = 0;i<6;i++)
+			b.insert(a[i],t);
+		for(int i = 0;i<6;i++)
+			b.insert(c[i],t2);
+		if(b.findMax(t)-b.findMin(t) == 0 ||b.findMax(t)-b.findMin(t) == -1
+				|| b.findMax(t)-b.findMin(t) == 1){
+			if(b.findMax(t.getLChild())-b.findMin(t.getRChild()) == 1 || b.findMax(t.getLChild())-b.findMin(t.getRChild()) == 0
+					|| b.findMax(t.getLChild())-b.findMin(t.getRChild()) == -1)
+				System.out.println("balanced");
+			else
+				System.out.println("Unbalanced");
+		}
+		else
+			System.out.println("Unbalanced");
+		System.out.println();
+		if(b2.findMax(t2)-b2.findMin(t2) == 0 ||b2.findMax(t2)-b2.findMin(t2) == -1
+				|| b2.findMax(t2)-b2.findMin(t2) == 1){
+			if(b2.findMax(t2.getLChild())-b2.findMin(t2.getRChild()) == 1 || b2.findMax(t2.getLChild())-b2.findMin(t2.getRChild()) == 0
+					|| b2.findMax(t2.getLChild())-b2.findMin(t2.getRChild()) == -1)
+				System.out.println("balanced");
+			else
+				System.out.println("Unbalanced");
+		}
+		else
+			System.out.println("Unbalanced");
+	}
+}
