@@ -8,7 +8,7 @@ class QuickUnion{
 		dist = new int[N+1][N+1];
 	}
 	
-	public void union(int a, int b){
+	public void union(int a, int b){//指的是把a指向b
 		dist[a][b] = 1;
 		dist[b][a] = -1;
 	}
