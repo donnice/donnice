@@ -1,0 +1,57 @@
+import java.util.*;
+import java.io.*;
+
+class petShop{
+	List<Object>dog = new LinkedList<Object>();
+	List<Object>cat = new LinkedList<Object>();
+	int N;
+	int i = 0;
+	public void push(String s){
+			if(s.charAt(0) == 'c'){
+				cat.add(s);
+				
+			}
+			else if(s.charAt(0) == 'd'){
+				dog.add(s);
+				
+			}
+			else
+				;
+	}
+		
+	
+	public void dequeue(int s){
+		switch(s){
+		case 1:if(cat.size() == 0)
+					System.out.println("已出柜");
+				else{
+					System.out.println(cat.get(0));
+					cat.remove(0);
+				}
+				break;
+		case 2:if(dog.size() == 0)
+					System.out.println("已出柜");
+				 else{
+					System.out.println(dog.get(0));
+					dog.remove(0);
+				 }
+				 break;
+		default: System.out.println("保安！");
+				 break;
+		}
+	}
+}
+
+public class Q3_7 {
+	public static void main(String[] args) throws IOException{
+		Scanner sc = new Scanner(System.in);
+		petShop pt = new petShop();
+		String[] a = {"doga","dogb","cata"};
+		pt.N = a.length;
+		for(int i = 0; i<a.length; i++)
+			pt.push(a[i]);
+		System.out.println("要狗请按1，要猫请按2，不要请按0:");
+		for(int x = sc.nextInt(); x!=0; x = sc.nextInt())
+			pt.dequeue(x);
+	}
+}
