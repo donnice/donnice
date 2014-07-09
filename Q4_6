@@ -1,0 +1,25 @@
+public BiTreeNode getNext(BiTreeNode t){
+	if(t.getRChild()!=null){
+		BiTreeNode t1 = new BiTreeNode();
+		t1 = t.getRChild();
+		while(t1!=null)
+			t1 = t1.getLChid();
+		return t1;
+	}
+	
+	else if(t.parent.getLChild == t){
+		return t.parent;
+	}
+	
+	else if(t.parent.getRChild == t){
+		BiTreeNode t2 = new BiTreeNode();
+		t2 = t.parent;
+		while(t2.parent!=null && t2.parent.getLChild()!=t2.parent)
+			t2 = t2.parent;
+		if(t2.parent == null)
+			return t;
+		if(t2.parent.getLChild()==t2.parent)
+			return t2.parent;
+	}
+	return t;
+}
