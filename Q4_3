@@ -1,0 +1,119 @@
+class BiTreeNode{
+	public Object data;
+	public BiTreeNode lt,rt;
+	public BiTreeNode(){
+		this(null);
+	}
+	public BiTreeNode(Object data){
+		this(data,null,null);
+	}
+	public BiTreeNode(Object data,BiTreeNode lt,BiTreeNode rt){
+		this.data = data;
+		this.lt = lt;
+		this.rt = rt;
+	}
+	public Object getData(){
+		return data;
+	}
+	public void setData(Object data){
+		this.data = data;
+	}
+	public BiTreeNode getLChild(){
+		return lt;
+	}
+	public void setLChild(BiTreeNode lt){
+		this.lt = lt;
+	}
+	public BiTreeNode getRChild(){
+		return rt;
+	}
+	public void setRChild(BiTreeNode rt){
+		this.rt = rt;
+	}
+}
+
+class BiTree{
+	private BiTreeNode root;
+	
+	public BiTree(){
+		this.root = null;
+	}
+	public BiTree(BiTreeNode root){
+		this.root = root;
+	}
+	public void insert(int x){
+		root = insert(x,root);
+	}
+	public BiTreeNode insert(int x, BiTreeNode t){
+		if(t == null)
+			return new BiTreeNode(x,null,null);
+		int compareResult = String.valueOf(x).compareTo(String.valueOf(t.data));
+		if(compareResult<0)
+			t.lt = insert(x, t.lt);
+		else if(compareResult>0)
+			t.rt = insert(x, t.rt);
+		else
+			;
+		return t;
+	}
+	
+	public int getHeight(BiTreeNode node){
+		if(node == null)
+			return 0;
+		int height = 1;
+		if(node.lt!=null)
+			height = 1+getHeight(node.lt);
+		if(node.rt!=null){
+			int h = 1+getHeight(node.rt);
+			height = height>h? height:h;
+		}
+		return height;
+	}
+	
+	public boolean isBalance(BiTreeNode node){
+		if(node == null)
+			return true;
+		int left = getHeight(node.lt);
+		int right = getHeight(node.rt);
+		int diff = left - right;
+		if(diff>1 || diff<-1)
+			return false;
+		return isBalance(node.lt) && isBalance(node.rt);
+	}
+	
+				
+	public void printTree(BiTreeNode t){
+		if(t!=null){
+			System.out.print(t.getData()+" ");
+			printTree(t.getLChild());
+			System.out.println();
+			printTree(t.getRChild());
+		}
+	}
+	
+}
+public class Q4_3 {
+	public static BiTreeNode creatTree(Object[] a){
+		return sortAutomatically(a, 0, a.length-1);
+	}
+	
+	public static BiTreeNode sortAutomatically(Object[]a, int lo, int high){
+		if(lo>high)
+			return null;
+		int mid = high - (high-lo)/2;
+		BiTreeNode node = new BiTreeNode(a[mid]);
+		node.lt = sortAutomatically(a, lo, mid-1);
+		node.rt = sortAutomatically(a, mid+1, high);
+		return node;		
+	}
+	public static void main(String[] agrs){
+		Object[] a = new Object[7];
+		for(int i = 1; i<=a.length; i++)
+			a[i-1] = i;
+		BiTreeNode t = creatTree(a);
+		BiTree b = new BiTree(t);
+		System.out.print(b.getHeight(t));
+		
+	}
+
+}
