@@ -1,0 +1,169 @@
+import java.util.LinkedList;
+
+class BiTreeNode{
+	public Object data;
+	public BiTreeNode lt,rt;
+	public BiTreeNode t2;
+	public BiTreeNode(){
+		this(null);
+	}
+	public BiTreeNode(Object data){
+		this(data,null,null);
+	}
+	public BiTreeNode(Object data,BiTreeNode lt,BiTreeNode rt){
+		this.data = data;
+		this.lt = lt;
+		this.rt = rt;
+	}
+	public Object getData(){
+		return data;
+	}
+	public void setData(Object data){
+		this.data = data;
+	}
+	public BiTreeNode getLChild(){
+		return lt;
+	}
+	public void setLChild(BiTreeNode lt){
+		this.lt = lt;
+	}
+	public BiTreeNode getRChild(){
+		return rt;
+	}
+	public void setRChild(BiTreeNode rt){
+		this.rt = rt;
+	}
+}
+
+class BieTree{
+	private BiTreeNode root;
+	
+	public BieTree(){
+		this.root = null;
+	}
+	public BieTree(BiTreeNode root){
+		this.root = root;
+	}
+	public void insert(int x){
+		root = insert(x,root);
+	}
+	public BiTreeNode insert(int x, BiTreeNode t){
+		if(t == null)
+			return new BiTreeNode(x,null,null);
+		int compareResult = String.valueOf(x).compareTo(String.valueOf(t.data));
+		if(compareResult<0)
+			t.lt = insert(x, t.lt);
+		else if(compareResult>0)
+			t.rt = insert(x, t.rt);
+		else
+			;
+		return t;
+	}
+	
+	public int getHeight(BiTreeNode node){
+		if(node == null)
+			return 0;
+		int height = 1;
+		if(node.lt!=null)
+			height = 1+getHeight(node.lt);
+		if(node.rt!=null){
+			int h = 1+getHeight(node.rt);
+			height = height>h? height:h;
+		}
+		return height;
+	}
+	
+	public boolean isBalance(BiTreeNode node){
+		if(node == null)
+			return true;
+		int left = getHeight(node.lt);
+		int right = getHeight(node.rt);
+		int diff = left - right;
+		if(diff>1 || diff<-1)
+			return false;
+		return isBalance(node.lt) && isBalance(node.rt);
+	}
+	
+				
+	public void printTree(BiTreeNode t){
+		if(t!=null){
+			System.out.print(t.getData()+" ");
+			printTree(t.getLChild());
+			System.out.println();
+			printTree(t.getRChild());
+		}
+	}
+	
+	public BiTreeNode getParent(BiTreeNode t, BiTreeNode t2){
+		if(t!=null && t2!=null){
+			if(t == t2 || t.getRChild() == t2 || t.getLChild() == t2)
+				return t;
+			else if((int)(t2.getData())<(int)(t.getData()))
+				return getParent(t.getLChild(),t2);
+			else if((int)(t2.getData())>(int)(t.getData()))
+				return getParent(t.getRChild(),t2);	
+		}
+		return t;
+			
+		
+		
+	}
+	
+	public BiTreeNode getNext(BiTreeNode t3, BiTreeNode t){
+		BiTreeNode t1;
+		if(t.getRChild()!=null){
+			t1 = t.getRChild();
+			while(t1.getLChild()!=null)
+				t1 = t1.getLChild();
+			return t1;
+		}
+		else if(this.getParent(t3, t)!=null && this.getParent(t3, t).getLChild() == t)
+			return this.getParent(t3, t);
+		else if(this.getParent(t3, t)!=null && this.getParent(t3, t).getRChild() == t){
+			while(this.getParent(t3, t).getLChild() != t && this.getParent(t3, t)!=null)
+				t = this.getParent(t3, t);
+			if(this.getParent(t3, t)==null)
+				return t;
+			else if(this.getParent(t3, t).getLChild() == t)
+				return this.getParent(t3, t);
+		}			
+		return t;
+	}
+}
+public class Q4_4 {
+	static LinkedList<Object> list = new LinkedList<Object>();
+	static BieTree b = new BieTree();
+	public static int getDepth(BiTreeNode t, BiTreeNode t2){
+		int i = 0;
+		while(t!=null & b.getParent(t,t2)!=t2){
+			t2 = b.getParent(t,t2);
+			i++;
+		}
+		return i;
+	}
+	
+	public static void getSameDepthNodes(int i, BiTreeNode t, BiTreeNode t2){
+		if(t2!=null){
+			if(i == getDepth(t,t2))
+				list.add(t2.getData());
+			getSameDepthNodes(i, t, t2.lt);
+			getSameDepthNodes(i, t, t2.rt);
+		}
+	}
+	
+	public static void main(String[] args){
+		BiTreeNode t = new BiTreeNode(5);
+		int[] a = {2,1,4,3,8,7,6};
+		BiTree b = new BiTree(t);
+		for(int i = 0;i<a.length;i++)
+			b.insert(a[i],t);
+		for(int i = 0; i<b.getHeight(t); i++){
+			getSameDepthNodes(i, t, t);
+			while(!list.isEmpty()){
+				System.out.print(list.get(0)+" ");
+				list.remove(0);
+			}
+			System.out.println();
+		}		
+	}	
+}
