@@ -1,0 +1,122 @@
+class BiTreeNode{
+	public Object data;
+	public BiTreeNode lt,rt;
+	public BiTreeNode(){
+		this(null);
+	}
+	public BiTreeNode(Object data){
+		this(data,null,null);
+	}
+	public BiTreeNode(Object data,BiTreeNode lt,BiTreeNode rt){
+		this.data = data;
+		this.lt = lt;
+		this.rt = rt;
+	}
+	public Object getData(){
+		return data;
+	}
+	public void setData(Object data){
+		this.data = data;
+	}
+	public BiTreeNode getLChild(){
+		return lt;
+	}
+	public void setLChild(BiTreeNode lt){
+		this.lt = lt;
+	}
+	public BiTreeNode getRChild(){
+		return rt;
+	}
+	public void setRChild(BiTreeNode rt){
+		this.rt = rt;
+	}
+}
+
+class BiTree{
+	private BiTreeNode root;
+	
+	public BiTree(){
+		this.root = null;
+	}
+	public BiTree(BiTreeNode root){
+		this.root = root;
+	}
+	public void insert(int x){
+		root = insert(x,root);
+	}
+	public BiTreeNode insert(int x, BiTreeNode t){
+		if(t == null)
+			return new BiTreeNode(x,null,null);
+		int compareResult = String.valueOf(x).compareTo(String.valueOf(t.data));
+		if(compareResult<0)
+			t.lt = insert(x, t.lt);
+		else if(compareResult>0)
+			t.rt = insert(x, t.rt);
+		else
+			;
+		return t;
+	}
+	
+	public int getHeight(BiTreeNode node){
+		if(node == null)
+			return 0;
+		int height = 1;
+		if(node.lt!=null)
+			height = 1+getHeight(node.lt);
+		if(node.rt!=null){
+			int h = 1+getHeight(node.rt);
+			height = height>h? height:h;
+		}
+		return height;
+	}
+	
+	public boolean isBalance(BiTreeNode node){
+		if(node == null)
+			return true;
+		int left = getHeight(node.lt);
+		int right = getHeight(node.rt);
+		int diff = left - right;
+		if(diff>1 || diff<-1)
+			return false;
+		return isBalance(node.lt) && isBalance(node.rt);
+	}
+			
+	public void printTree(BiTreeNode t){
+		if(t!=null){
+			System.out.print(t.getData()+" ");
+			printTree(t.getLChild());
+			System.out.println();
+			printTree(t.getRChild());
+		}
+	}
+	
+}
+public class Q4_5 {
+	public static boolean isBST(BiTreeNode t, BiTreeNode t2){
+		if(t!=null && t2!=null){
+			if(t2.lt!=null && (int)(t2.lt.getData())>=(int)(t2.getData()))
+					return false;
+			if(t2.rt!=null && (int)(t2.rt.getData())<=(int)(t2.getData()))
+					return false;
+			if(t2.lt!=null)
+				return	isBST(t, t2.lt);
+			if(t2.rt!=null)
+				return isBST(t, t2.rt);			
+		}
+		if(t.lt!=null)
+			return isBST(t.lt, t.lt);
+		if(t.rt!=null)
+			return isBST(t.rt, t.rt);
+		return true;
+	}
+	
+	public  static void main(String[] args){
+		BiTreeNode t = new BiTreeNode(5);
+		BiTree b = new BiTree(t);
+		int[] a = {9,8,7,6,11,12};
+		for(int i = 0;i<a.length;i++)
+			b.insert(a[i],t);
+		System.out.println(isBST(t,t));
+	}
+
+}
