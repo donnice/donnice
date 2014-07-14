@@ -1,0 +1,44 @@
+public class Q5_1 {
+	public static boolean getBit(int num, int i){
+		return (num&(1<<i))!=0;
+	}
+	
+	public static int setBit(int num, int i){
+		return num | (1<<i);
+	}
+	
+	public static int clearMSBit(int num, int i){
+		int mask = (1<<i)-1;
+		return num & mask;
+	}
+	
+	public static int clearZeroBit(int num, int i){
+		int mask = ~((1<<(i+1))-1);
+		return num & mask;
+	}
+	
+	public static int updateBit(int num, int i, int v){
+		int mask = ~(1<<i);
+		return (num&mask)|(v<<i);
+	}
+	
+	public static int clearCertainBit(int num, int i, int j){
+		int left = clearMSBit(num,i);
+		int right = clearZeroBit(num,j);
+		return left | right;
+	}
+	
+	public static int mergeCertainNum(int n, int m, int i, int j){
+		int mask = clearCertainBit(n,i,j);
+		int n_clear = n & mask;
+		int m_shifted = m<<i;
+		return n_clear | m_shifted;
+	}
+	
+	public static void main(String[] args){
+		System.out.println(Integer.toBinaryString(1024));
+		System.out.println(Integer.toBinaryString(19));
+		System.out.println(Integer.toBinaryString(mergeCertainNum(1024,19,2,6)));
+	}
+
+}
