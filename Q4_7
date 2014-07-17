@@ -1,0 +1,10 @@
+public static BiTreeNode getSameAncestor(BiTreeNode t, BiTreeNode t1, BiTreeNode t2){
+		if(t2!=null && t1!=null){
+			while(b.getParent(t, t1) != b.getParent(t,t2)){
+				t1 = b.getParent(t, t1);
+				t2 = b.getParent(t, t2);
+			}
+			return b.getParent(t, t1);
+		}
+		return null;
+	}
