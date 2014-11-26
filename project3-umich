@@ -1,0 +1,147 @@
+--1a
+select relname,relkind from pg_class where relname LIKE 'cust%';
+
+--1b
+select relname, relpages from pg_class where relkind = 'i' order by relpages desc;
+select relname, relpages from pg_class where relkind = 'r' order by relpages desc;
+
+--1c
+select attname, n_distinct from pg_stats where tablename = 'customers';
+
+--1d
+select count(distinct customerid) customerid from customers; 
+select count(distinct firstname) firstname from customers; 
+select count(distinct lastname) lastname from customers; 
+select count(distinct address1) address1 from customers; 
+select count(distinct address2) address2 from customers; select count(distinct city) city from customers;
+select count(distinct state) state from customers;
+select count(distinct zip) zip from customers;
+select count(distinct country) country from customers;
+select count(distinct region) region from customers;
+select count(distinct email) email from customers;
+select count(distinct phone) phone from customers;
+select count(distinct creditcardtype) creditcardtype from customers;
+select count(distinct creditcard) creditcard from customers; select count(distinct creditcardexpiration) creditcardexpiration from customers;
+select count(distinct username) username from customers; select count(distinct password) from customers;
+select count(distinct age) age from customers;
+select count(distinct income) income from customers;
+select count(distinct gender) gender from customers;
+
+vacuum;
+analyze;
+
+--2a
+explain select * from customers where country = 'Japan';
+select count(*) from customers where country = 'Japan';
+
+--3a
+\i setup_db.sql;
+VACUUM;
+ANALYZE;
+CREATE INDEX customers_country ON customers(country);
+VACUUM;
+ANALYZE;
+
+--3b
+explain select * from customers where country = 'Japan';
+
+--3c
+CLUSTER customers_country ON customers;
+VACUUM;
+ANALYZE;
+
+--3d
+explain select * from customers where country = 'Japan';
+
+--4a
+\i setup_db.sql;
+VACUUM;
+ANALYZE;
+
+--4b
+explain select totalamount from customers c, orders o where c.customerid = o.customerid and c.country = 'Japan';
+
+--4c
+set enable_hashjoin = off;
+explain select totalamount from customers c, orders o where c.customerid = o.customerid and c.country = 'Japan';
+
+--4d
+set enable_mergejoin = off;
+explain select totalamount from customers c, orders o where c.customerid = o.customerid and c.country = 'Japan';
+
+--5a
+\i setup_db.sql;
+VACUUM;
+ANALYZE;
+SET enable_hashjoin = on;
+SET enable_mergejoin = on;
+explain select AVG(totalamount) as avgOrder, country From Customers C, Orders O where C.customerid = O.customerid Group by country Order by avgOrder;
+
+SET enable_hashjoin = off;
+explain select AVG(totalamount) as avgOrder, country From Customers C, Orders O where C.customerid = O.customerid Group by country Order by avgOrder;
+
+--5b
+SET enable_hashjoin = on;
+explain select * from Customers C, Orders O where C.customerid = O.customerid Order by C.customerid;
+
+SET enable_mergejoin = off;
+explain select * from Customers C, Orders O where C.customerid = O.customerid Order by C.customerid;
+
+--6a
+\i setup_db.sql;
+VACUUM;
+ANALYZE;
+explain select C.customerid, C.lastname from Customers C where 4<(select count(*) from orders o where o.customerid = c.customerid);
+
+--6b
+create view OrderCount as select customerid, count(*) as numorders from orders group by customerid;
+
+--6c
+select C.customerid, C.lastname from Customers C, OrderCount O where C.customerid = O.customerid and O.numorders > 4;
+
+--6d
+explain select C.customerid, C.lastname from Customers C, OrderCount O where C.customerid = O.customerid and O.numorders > 4;
+
+--7a
+\i setup_db.sql;
+VACUUM;
+ANALYZE;
+explain select customerid, lastname, numorders 
+from (select c.customerid, c.lastname, count(*) as numorders from customers c, orders o 
+where c.customerid = o.customerid and c.country = 'Japan' 
+group by c.customerid, lastname) as ordercounts1 
+where 5>=(select count(*) from (select c.customerid, c.lastname, count(*) as numorders 
+from customers c, orders o 
+where c.customerid = o.customerid and c.country = 'Japan' 
+group by c.customerid, lastname) as ordercounts2 
+where ordercounts1.numorders<ordercounts2.numorders) 
+order by customerid;
+
+--7b
+create view OrderCountJapan as select c.customerid, count(*) as numorders  from customers c, orders o where c.customerid = o.customerid and c.country = 'Japan' group by c.customerid order by numorders desc;
+
+create view morefrequentjapancustomers as select o1.customerid,o1.numorders, count(o2.numorders)-1 orank from ordercountjapan o1 ,ordercountjapan o2 where o1.numorders<o2.numorders or (o1.numorders=o2.numorders and o1.customerid=o2.customerid) group by o1.customerid,o1.numorders order by orank;
+
+--7c
+select m.customerid,c.lastname,m.numorders from morefrequentjapancustomers m, customers c where m.customerid=c.customerid and 5>=m.orank order by customerid;
+
+
+--7d
+explain select m.customerid,c.lastname,m.numorders from morefrequentjapancustomers m, customers c where m.customerid=c.customerid and 5>=m.orank order by customerid;
+
+--8a
+create table CustomerOrders as select * from customers INNER JOIN orders using (customerid);
+
+vacuum;
+analyze;
+
+--8b
+select customerid, lastname from CustomerOrders group by customerid, lastname having count(*)>4;
+
+--8c
+explain select customerid, lastname from CustomerOrders group by customerid, lastname having count(*)>4;
+
+drop view OrderCount;
+drop view OrderCountJapan;
+drop view morefrequentjapancustomers;
+
