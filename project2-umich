@@ -1,0 +1,422 @@
+@Override
+	// ***** Query 1 *****
+	// Find information about friend names:
+	// (1) The longest last name (if there is a tie, include all in result)
+	// (2) The shortest last name (if there is a tie, include all in result)
+	// (3) The most common last name, and the number of times it appears (if there is a tie, include all in result)
+	//
+	public void findNameInfo() throws SQLException { // Query1
+        // Find the following information from your database and store the information as shown
+		
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+//		find out the length of all the exist names with the length() function and order
+		ResultSet rst1 = stmt.executeQuery("select distinct length(last_name), last_name from "+
+				userTableName+
+				" order by 1 desc");
+		
+		int countLongest = 0;
+		int countShortest = 0;
+//		run the rst once to get the amount of longest and shortest names
+//		actually, it is not necessary to do so. In the 8th query I use another way
+		while(rst1.next()){
+			if(rst1.isFirst())
+				countLongest = rst1.getInt(1);
+			if(rst1.isLast())
+				countShortest = rst1.getInt(1);
+		}
+//		
+		rst1 = stmt.executeQuery("select distinct length(last_name), last_name from "+
+				userTableName+
+				" order by 1 desc");
+//		find the ties of the longest names and shortest names
+		while(rst1.next()){
+			String lastName = rst1.getString(2);
+			if(rst1.getInt(1) == countLongest)
+				this.longestLastNames.add(lastName);
+			if(rst1.getInt(1) == countShortest)
+				this.shortestLastNames.add(lastName);
+		}
+//		count the most common last names
+		rst1 = stmt.executeQuery("select count(*), last_name from "+
+				userTableName+" where last_name is not null group by last_name order by 1 desc");
+		
+		int count1 = 0;
+		while(rst1.next()){
+			if(rst1.isFirst())
+				count1 = rst1.getInt(1);
+		}
+		
+		rst1 = stmt.executeQuery("select count(*), last_name from "+
+				userTableName+" where last_name is not null group by last_name order by 1 desc");
+		while(rst1.next()){
+			if(rst1.getInt(1) == count1)
+				this.mostCommonLastNames.add(rst1.getString(2));
+			break;
+		}
+		this.mostCommonLastNamesCount = count1;
+		
+		rst1.close();
+		stmt.close();
+	}
+	
+	@Override
+	// ***** Query 2 *****
+	// Find the user(s) who have no friends in the network
+	//
+	// Be careful on this query!
+	// Remember that if two users are friends, the friends table
+	// only contains the pair of user ids once, subject to 
+	// the constraint that user1_id < user2_id
+	//
+	
+	public void lonelyFriends() throws SQLException {
+		
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+//		just select everyone who exist in the friend table. A lonely friend should be in
+//		neither user1_id nor user2_id
+		ResultSet rst2 = stmt.executeQuery("select user_id, first_name, last_name from "
+		        + userTableName+" where user_id in(select distinct user1_id from "+friendsTableName+" union select distinct user2_id from "
+		+friendsTableName+" minus select distinct user_id from "+userTableName+")");
+											
+		this.countLonelyFriends = 0;
+		int count2 = 0;
+		while(rst2.next()){
+			long user_id = rst2.getInt(1);
+			String lastName = rst2.getString(2);
+			String FirstName = rst2.getString(3);
+			this.lonelyFriends.add(new UserInfo(user_id, lastName, FirstName));
+			count2++;
+		}
+		this.countLonelyFriends = count2;
+		rst2.close();
+		stmt.close();
+	}
+	 
+
+	@Override
+	// ***** Query 3 *****
+	// Find the users who still live in their hometowns
+	// (I.e., current_city = hometown_city)
+	//	
+	public void liveAtHome() throws SQLException {
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+//		do the selection on those whose current city is same to their hometown city
+		ResultSet rst3 = stmt.executeQuery("select user_id, last_name, first_name from " +
+					userTableName+" where user_id in (select h.user_id from "+ hometownCityTableName+ " h,"
+				    + currentCityTableName +" c where h.user_id = c.user_id and h.hometown_city_id = c.current_city_id)");
+		
+		int count3 = 0;
+		
+		while(rst3.next()){
+			long user_id = rst3.getInt(1);
+			String lastName = rst3.getString(3);
+			String firstName = rst3.getString(2);
+			this.liveAtHome.add(new UserInfo(user_id, lastName, firstName));
+			count3++;
+		}
+		this.countLiveAtHome = count3;
+		rst3.close();
+		stmt.close();
+	}
+
+
+
+	@Override
+	// **** Query 4 ****
+	// Find the top-n photos based on the number of tagged users
+	// If there are ties, choose the photo with the smaller numeric PhotoID first
+	// 
+	public void findPhotosWithMostTags(int n) throws SQLException {
+//		Two statements are made. one for most tagged photo, the other for those who on the photos
+//      This query asks for about 40s as runtime
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+		Statement stmt1 = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+		
+		ResultSet rst4 = stmt.executeQuery("select distinct w.tag_photo_ID, y.album_ID,z.album_Name, y.photo_Caption, y.photo_Link,w.c from (select count(*) c, tag_photo_id from "
+		        + tagTableName +" group by tag_photo_id order by c desc,tag_photo_id) w,"
+		        + photoTableName +" y,"+ albumTableName+" z,"+ tagTableName +" t where w.tag_photo_id = y.photo_id and y.album_id = z.album_id"
+		        		+ " order by c desc, tag_photo_id");
+		int count4 = 0;
+		
+		while(rst4.next() && count4<n){
+			String photoId = rst4.getString(1);
+			String albumId = rst4.getString(2);
+			String albumName = rst4.getString(3);
+			String photoCaption = rst4.getString(4);
+			String photoLink = rst4.getString(5);
+			PhotoInfo p = new PhotoInfo(photoId, albumId, albumName, photoCaption, photoLink);
+			count4++;
+			TaggedPhotoInfo tp = new TaggedPhotoInfo(p);
+//			Here the stmt1 is used for selection the users' information
+			ResultSet rst = stmt1.executeQuery("Select u.user_id, u.last_name, u.first_name from "+userTableName+" u, "+tagTableName+" t,"+
+											photoTableName +" p where t.tag_photo_id = "+ photoId +" and t.tag_subject_id = u.user_id");
+			while(rst.next()){
+				long user_id = rst.getInt(1);
+				String lastName = rst.getString(2);
+				String firstName = rst.getString(3);
+				tp.addTaggedUser(new UserInfo(user_id, lastName, firstName));
+				this.photosWithMostTags.add(tp);
+			}
+			rst.close();
+		}
+		rst4.close();
+		stmt.close();
+		stmt1.close();
+	}
+
+	
+	
+	
+	@Override
+	// **** Query 5 ****
+	// Find suggested "match pairs" of friends, using the following criteria:
+	// (1) One of the friends is female, and the other is male
+	// (2) Their age difference is within "yearDiff"
+	// (3) They are not friends with one another
+	// (4) They should be tagged together in at least one photo
+	//
+	// You should up to n "match pairs"
+	// If there are more than n match pairs, you should break ties as follows:
+	// (i) First choose the pairs with the largest number of shared photos
+	// (ii) If there are still ties, choose the pair with the smaller user_id for the female
+	// (iii) If there are still ties, choose the pair with the smaller user_id for the male
+	//
+	public void matchMaker(int n, int yearDiff) throws SQLException {
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+		Statement stmt1 = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+//		Here the drop view are executed. If not, there will be duplicated errors.
+//		If you execute this part first time, please delete the drop these "drop view" commands if there are "not existing" errors
+		stmt.executeQuery("drop view FEMALE");
+		stmt.execute("drop view MALE");
+		stmt.execute("drop view fated_couple");
+		stmt.execute("drop view lonelyguys");
+//		create view called male and female, which will be eaiser for me to do the selection
+		stmt.executeUpdate("create view FEMALE as select * from "+userTableName+" where gender = 'female'");
+		stmt.executeUpdate("create view MALE as select * from "+userTableName+" where gender = 'male'");
+//		The fated_couple is used to select the couples that 
+//		the two target man and woman appear at least in one photo together
+		stmt.executeQuery("create view fated_couple as select count(*) c, m.user_id as man_id, f.user_id as woman_id from "
+				+ "MALE m, FEMALE f, "+ tagTableName +" y1,"+tagTableName+" y2 where m.user_id = y1.tag_subject_id and f.user_id = y2.tag_subject_id "
+						+ " and y1.tag_photo_id = y2.tag_photo_id group by m.user_id, f.user_id order by c desc,f.user_id, m.user_id");
+//		Lonely guys select the couples from upper view who are not friends each other within certain yearDiff
+		stmt.executeUpdate("create view lonelyguys as (select f.man_id, f.woman_id from fated_couple f where f.woman_id not in(select y.user2_id from "+
+						friendsTableName+" y, fated_couple f where f.man_id = y.user1_id) union"
+						+ " select f.man_id, f.woman_id from fated_couple f where f.man_id not in(select y.user2_id from "
+						+friendsTableName+" y, fated_couple f where f.woman_id = y.user1_id))");
+		ResultSet rst5 = stmt.executeQuery("select l.man_id,u1.first_name, u1.last_name, u1.year_of_birth, l.woman_id, u2.first_name, u2.last_name, u2.year_of_birth from lonelyguys l, "
+				+userTableName+" u1,"+userTableName+" u2 where l.man_id = u1.user_id and l.woman_id = u2.user_id and u1.year_of_birth - u2.year_of_birth <"+yearDiff+" and u1.year_of_birth - u2.year_of_birth>"+ -yearDiff);
+		int count = 0;
+		while(rst5.next() && count<n){
+			Long girlUserId = rst5.getLong(5);
+			String girlFirstName = rst5.getString(6);
+			String girlLastName = rst5.getString(7);
+			int girlYear = rst5.getInt(8);
+			Long boyUserId = rst5.getLong(1);
+			String boyFirstName = rst5.getString(2);
+			String boyLastName = rst5.getString(3);
+			int boyYear = rst5.getInt(4);
+			MatchPair mp = new MatchPair(girlUserId, girlFirstName, girlLastName, 
+				girlYear, boyUserId, boyFirstName, boyLastName, boyYear);
+			ResultSet rst = stmt1.executeQuery("select p.photo_id, p.album_id, a.album_name, p.photo_caption, p.photo_link from "+
+				photoTableName+" p,"+albumTableName+" a,"+tagTableName+
+				" t1,"+tagTableName+" t2 where p.album_id = a.album_id and p.photo_id = t1.tag_photo_id and t1.tag_subject_id = "+rst5.getLong(1)+" and t2.tag_subject_id = "+rst5.getLong(5)+" and t1.tag_photo_id = t2.tag_photo_id");
+			count++;
+			while(rst.next()){
+				String sharedPhotoId = rst.getString(1);
+				String sharedPhotoAlbumId = rst.getString(2);
+				String sharedPhotoAlbumName = rst.getString(3);
+				String sharedPhotoCaption = rst.getString(4);
+				String sharedPhotoLink = rst.getString(5);
+				mp.addSharedPhoto(new PhotoInfo(sharedPhotoId, sharedPhotoAlbumId, 
+				sharedPhotoAlbumName, sharedPhotoCaption, sharedPhotoLink));
+			}
+			this.bestMatches.add(mp);
+			rst.close();
+		}
+		rst5.close();
+		stmt.close();
+		stmt1.close();
+	}
+
+	
+	// **** Query 6 ****
+	// Suggest friends based on mutual friends
+	// 
+	// Find the top n pairs of users in the database who share the most
+	// friends, but such that the two users are not friends themselves.
+	//
+	// Your output will consist of a set of pairs (user1_id, user2_id)
+	// No pair should appear in the result twice; you should always order the pairs so that
+	// user1_id < user2_id
+	//
+	// If there are ties, you should give priority to the pair with the smaller user1_id.
+	// If there are still ties, give priority to the pair with the smaller user2_id.
+	//
+	@Override
+	public void suggestFriendsByMutualFriends(int n) throws SQLException {
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+		Statement stmt1 = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+//		Same to the Query5. If you run this first, just drop the "drop view" commands
+		stmt.executeQuery("drop view new_friend");
+		stmt.executeQuery("drop view w");
+//		Make a view which just combines two friend tables
+//		One of which change user1 and user2 to each other, which will make the latter work easier
+//		Order function is used again to fulfill the "tie" situations
+		stmt.executeQuery("create view new_friend as(select user1_id, user2_id from "+friendsTableName
+				+" union select user2_id as user1_id, user1_id as user2_id from "+friendsTableName+
+				" ) order by user1_id");
+//		Do the selection of couples who are not in others' friend table. 
+//		Here we can see not any couple will be missing because of the upper view we made.
+//		Of course, this may also be solved by union function
+		stmt.executeQuery("create view w as select count(*) c, n1.user2_id as user1_id, n2.user2_id as user2_id from new_friend n1, new_friend n2 where n1.user1_id = n2.user1_id and n1.user2_id < n2.user2_id group by n1.user2_id, n2.user2_id order by c desc,n1.user2_id,n2.user2_id");
+		ResultSet rst6 = stmt.executeQuery("select u1.user_id, u1.first_name, u1.last_name, u2.user_id, u2.first_name, u2.last_name from w w, "
+				+userTableName+" u1,"+userTableName+" u2 where u1.user_id = w.user1_id and u2.user_id = w.user2_id");
+		int count = 0;
+		while(rst6.next() && count<n){
+			Long user1_id = rst6.getLong(1);
+			String user1FirstName = rst6.getString(2);
+			String user1LastName = rst6.getString(3);
+			Long user2_id = rst6.getLong(4);
+			String user2FirstName = rst6.getString(5);
+			String user2LastName = rst6.getString(6);
+			FriendsPair p = new FriendsPair(user1_id, user1FirstName, user1LastName, user2_id, user2FirstName, user2LastName);
+			count++;
+//			Do selection from the view w and userTableName
+			ResultSet rst = stmt1.executeQuery("select n1.user1_id, u.first_name, u.last_name from new_friend n1, new_friend n2,"+
+			userTableName+" u where n1.user1_id = u.user_id and n1.user1_id = n2.user1_id and n1.user2_id = "+rst6.getLong(1)+
+			" and n2.user2_id = "+rst6.getLong(4));
+			while(rst.next()){
+				Long user_id = rst.getLong(1);
+				String sharedFirstName = rst.getString(2);
+				String sharedLastName = rst.getString(3);
+				p.addSharedFriend(user_id, sharedFirstName, sharedLastName);
+				this.suggestedFriendsPairs.add(p);
+			}
+			
+			rst.close();
+		}
+		stmt.close();
+		rst6.close();
+		stmt1.close();
+	}
+	
+	
+	//@Override
+	// ***** Query 7 *****
+	// Given the ID of a user, find information about that
+	// user's oldest friend and youngest friend
+	// 
+	// If two users have exactly the same age, meaning that they were born
+	// on the same day, then assume that the one with the larger user_id is older
+	//
+	public void findAgeInfo(Long user_id) throws SQLException {
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+//		Again, drop the following two commands if you run first
+		stmt.execute("drop view birthday_of_friends");
+		stmt.execute("drop view order_birthday_of_friends");
+//		Select friends info of a certain user 
+//      as binary relationships are only recorded once and user1_id always < user2_id, to select the use_ids
+//      for a given user,say 215, we have to select the user_ids of his friends by selecting the user_ids not 
+//      only where user1_id=215 but also where user2_id=215, and then do a union. 
+		stmt.executeQuery("create view birthday_of_friends as select u.user_id,u.first_name,u.last_name, u.day_of_birth,u.month_of_birth, u.year_of_birth from "
+				+userTableName+" u,"+friendsTableName+" f where f.user1_ID="+user_id+" and f.user2_ID=u.user_ID union select u.user_id,u.first_name,u.last_name, u.day_of_birth,u.month_of_birth, u.year_of_birth from "
+				+ userTableName+" u,"+friendsTableName+" f where f.user2_ID="+user_id+" and f.user1_ID=u.user_ID");
+//      Order the friends by year in desc, then by month in desc, then by day in desc, then by user_id in asc 
+//      in this order, the first tuple of the view should be the youngest friend and the last tuple should be the oldest
+//      if there is a tie in age, the first tuple should be the one with smaller use_id and the last tuple should be the one with larger user_id, which satisfies the requirement 
+		stmt.executeQuery("create view order_birthday_of_friends as select user_id,first_name,last_name, day_of_birth,month_of_birth, year_of_birth from birthday_of_friends order by year_of_birth desc, month_of_birth desc, day_of_birth desc,user_id asc");
+//      Select the required output attributes
+		ResultSet rst7 = stmt.executeQuery("select user_id, first_name, last_name from order_birthday_of_friends");
+		while(rst7.next()){
+			long userId = rst7.getLong(1);
+			String firstName = rst7.getString(2);
+			String lastName = rst7.getString(3);
+			if(rst7.isFirst())
+				this.youngestFriend = new UserInfo(userId, firstName, lastName);
+			if(rst7.isLast())
+				this.oldestFriend = new UserInfo(userId, firstName, lastName);
+		}
+		rst7.close();
+		stmt.close();
+	}
+	
+	
+	@Override
+	// ***** Query 8 *****
+	// 
+	// Find the name of the city with the most events, as well as the number of 
+	// events in that city.  If there is a tie, return the names of all of the (tied) cities.
+	//
+	public void findEventCities() throws SQLException {
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+//		Select the event cities and count their appearances
+		ResultSet rst8 = stmt.executeQuery("select count(*) c, e.event_city_id, ci.city_name from "
+				+eventTableName+" e,"+cityTableName+" ci where e.event_city_id = ci.city_id group by e.event_city_id, ci.city_name order by c desc");
+		int countMax = 0;
+//		Find the maximum appearances of the cities, and select all the cities which the same count
+		while(rst8.next()){
+			int eventCount = rst8.getInt(1);
+			String cityName = rst8.getString(3);
+			if(rst8.isFirst())
+				countMax = rst8.getInt(1);
+			if(eventCount == countMax){
+				this.eventCount = eventCount;
+				this.popularCityNames.add(cityName);
+			}
+		}
+		rst8.close();
+		stmt.close();
+	}
+	
+	
+	
+	@Override
+//	 ***** Query 9 *****
+	//
+	// Find pairs of potential siblings and print them out in the following format:
+	//   # pairs of siblings
+	//   sibling1 lastname(id) and sibling2 lastname(id)
+	//   siblingA lastname(id) and siblingB lastname(id)  etc.
+	//
+	// A pair of users are potential siblings if they have the same last name and hometown, if they are friends, and
+	// if they are less than 10 years apart in age.  Pairs of siblings are returned with the lower user_id user first
+	// on the line.  They are ordered based on the first user_id and in the event of a tie, the second user_id.
+	//  
+	//
+	public void findPotentialSiblings() throws SQLException {
+		Statement stmt = oracleConnection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
+		        ResultSet.CONCUR_READ_ONLY);
+		stmt.execute("drop view potential_sibling");
+	
+//      First each row of the public_friends table is selected, as the pair indicates friendship. Then the pair is checked
+//      in the public_users table and public_hometown_city table by the criteria. Finally, the info of the satisfied pair is selected. The view is ordered by user1_id if there is a tie
+		stmt.executeQuery("create view potential_sibling as select u1.user_id as user1_id,u1.first_name as user1_first_name, u1.last_name as user1_last_name, u2.user_id as user2_id,u2.first_name user2_first_name,u2.last_name as user2_last_name from "+
+		        friendsTableName +" f1, "+friendsTableName+" f2, "+userTableName+" u1,"+userTableName+" u2,"+ hometownCityTableName+" h1," + hometownCityTableName
+		        + " h2 where f1.user1_id=f2.user1_id and f1.user2_id=f2.user2_id and f1.user1_id=u1.user_id and f1.user2_id=u2.user_id and u1.last_name=u2.last_name and (u1.year_of_birth-u2.year_of_birth<10 and u1.year_of_birth-u2.year_of_birth>-10 ) and f1.user1_id=h1.user_id and f1.user2_id=h2.user_id and h1.hometown_city_id=h2.hometown_city_id order by user1_id asc,user2_id asc");
+		ResultSet rst9 = stmt.executeQuery("select user1_id, user1_first_name, user1_last_name,user2_id, user2_first_name, user2_last_name from potential_sibling");
+		while(rst9.next()){
+			Long user1_id = rst9.getLong(1);
+			String user1FirstName = rst9.getString(2);
+			String user1LastName = rst9.getString(3);
+			Long user2_id = rst9.getLong(4);
+			String user2FirstName = rst9.getString(5);
+			String user2LastName = rst9.getString(6);
+			SiblingInfo s = new SiblingInfo(user1_id, user1FirstName, user1LastName, user2_id, user2FirstName, user2LastName);
+			this.siblings.add(s);
+		}
+		rst9.close();
+		stmt.close();
+	}
+	
+}
